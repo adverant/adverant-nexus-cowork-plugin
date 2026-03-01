@@ -1,153 +1,294 @@
-# Adverant Nexus — Cowork Plugin
+<p align="center">
+  <img src="https://adverant.ai/nexus-logo.png" alt="Adverant Nexus" width="120" />
+</p>
 
-Unified MCP plugin that connects Claude to the full Adverant Nexus platform: **Skills Engine**, **GraphRAG memory**, **knowledge graphs**, **document management**, **semantic search**, and **multi-agent orchestration**.
+<h1 align="center">Adverant Nexus for Claude</h1>
 
-8 gateway tools, 6 skills, 3 commands, 1 agent — all through a single plugin.
+<p align="center">
+  <strong>Give Claude persistent memory, a skills marketplace, and multi-agent superpowers.</strong>
+</p>
 
-## Quick Start
+<p align="center">
+  <a href="https://www.npmjs.com/package/@adverant/nexus-cowork-plugin"><img src="https://img.shields.io/npm/v/@adverant/nexus-cowork-plugin?color=blue&label=npm" alt="npm" /></a>
+  <a href="https://github.com/adverant/adverant-nexus-cowork-plugin/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-green" alt="MIT License" /></a>
+  <a href="https://adverant.ai"><img src="https://img.shields.io/badge/platform-Adverant%20Nexus-purple" alt="Adverant Nexus" /></a>
+</p>
 
-### Option 1: Any MCP Client (Claude Desktop, Cursor, Windsurf, etc.)
+---
 
-1. **Get your API key** at [dashboard.adverant.ai/dashboard/api-keys](https://dashboard.adverant.ai/dashboard/api-keys)
-2. **Add to your MCP config:**
+## The Problem
 
-**Claude Desktop** (`~/Library/Application Support/Claude/claude_desktop_config.json`):
-```json
-{
-  "mcpServers": {
-    "nexus": {
-      "command": "npx",
-      "args": ["-y", "@adverant/nexus-cowork-plugin"],
-      "env": {
-        "NEXUS_API_KEY": "YOUR_API_KEY"
-      }
-    }
-  }
-}
+Every time you start a new conversation with Claude, it forgets everything. Your preferences, your project context, the skills you taught it, the documents you shared — gone. You start over. Every. Single. Time.
+
+You've built workflows, refined prompts, curated knowledge — but none of it persists. Claude is powerful, but without memory, it's like hiring a brilliant contractor who shows up with amnesia every morning.
+
+**What if Claude could remember everything, access a marketplace of reusable skills, and coordinate multiple agents — all from a single plugin?**
+
+---
+
+## Install in 30 Seconds
+
+Open Claude Desktop and paste the GitHub repo URL into Browse Plugins:
+
+```
+adverant/adverant-nexus-cowork-plugin
 ```
 
-**Claude Code** (`.mcp.json` in project root):
-```json
-{
-  "mcpServers": {
-    "nexus": {
-      "command": "npx",
-      "args": ["-y", "@adverant/nexus-cowork-plugin"],
-      "env": {
-        "NEXUS_API_KEY": "YOUR_API_KEY"
-      }
-    }
-  }
-}
+**That's it.** Three steps, thirty seconds:
+
+1. Open Claude Desktop → **Cowork** tab
+2. Click **Browse Plugins** → **"+"** → **Add marketplace from GitHub**
+3. Enter `adverant/adverant-nexus-cowork-plugin` → **Sync** → **Install**
+
+No config files. No terminal commands. No API keys to manage.
+
+---
+
+## What You Get
+
+```
+                        ┌─────────────────────────┐
+                        │   Adverant Nexus Plugin  │
+                        │                          │
+                        │   8 Tools  ·  6 Skills   │
+                        │   3 Commands · 1 Agent   │
+                        └────────────┬────────────┘
+                                     │
+              ┌──────────────────────┼──────────────────────┐
+              │                      │                      │
+    ┌─────────▼─────────┐  ┌────────▼────────┐  ┌─────────▼─────────┐
+    │  Persistent Memory │  │ Skills Engine   │  │  Multi-Agent      │
+    │                    │  │                 │  │  Orchestration    │
+    │  • GraphRAG store  │  │  • 50+ skills   │  │                   │
+    │  • Knowledge graph │  │  • Discover     │  │  • Collaborate    │
+    │  • Entity tracking │  │  • Invoke       │  │  • Compete        │
+    │  • Semantic search │  │  • Synthesize   │  │  • Analyze        │
+    │  • Document mgmt   │  │  • Auto-sync    │  │  • Synthesize     │
+    └───────────────────┘  └─────────────────┘  └───────────────────┘
 ```
 
-**Cursor** (`.cursor/mcp.json`):
-```json
-{
-  "mcpServers": {
-    "nexus": {
-      "command": "npx",
-      "args": ["-y", "@adverant/nexus-cowork-plugin"],
-      "env": {
-        "NEXUS_API_KEY": "YOUR_API_KEY"
-      }
-    }
-  }
-}
+### Persistent Memory That Never Forgets
+
+Claude normally loses all context between conversations. With Nexus, everything you tell it persists in a GraphRAG knowledge graph — relationships, facts, preferences, project context. Ask Claude to "remember that our API uses JWT auth" and it's stored permanently. Next week, next month — it still knows.
+
+```
+You:    "Remember that our production database is on us-east-1
+         and we use Prisma as our ORM."
+
+Claude: Stored in your knowledge graph.
+
+--- Two weeks later, new conversation ---
+
+You:    "What ORM do we use?"
+
+Claude: You use Prisma as your ORM, with your production
+        database hosted on us-east-1.
 ```
 
-**Windsurf** (`~/.codeium/windsurf/mcp_config.json`):
-```json
-{
-  "mcpServers": {
-    "nexus": {
-      "command": "npx",
-      "args": ["-y", "@adverant/nexus-cowork-plugin"],
-      "env": {
-        "NEXUS_API_KEY": "YOUR_API_KEY"
-      }
-    }
-  }
-}
+### A Skills Marketplace for Claude
+
+Stop rebuilding the same workflows from scratch. The Skills Engine gives Claude access to 50+ reusable, tested skills — from code review to patent creation to SEO optimization. Discover skills by describing what you need, invoke them instantly, or synthesize entirely new skills by combining existing ones.
+
+```
+You:    "Find me a skill for code review"
+
+Claude: Found 3 matching skills:
+        1. code-review (quality: 94%) — Multi-perspective security,
+           logic, and integration analysis
+        2. sp-requesting-code-review — Verify work meets requirements
+        3. sp-receiving-code-review — Technical rigor for feedback
+
+You:    "Combine code-review with the security analysis skill"
+
+Claude: Synthesized new skill: secure-code-review
+        Strategy: chain (code-review → security-analysis)
+        Quality score: 96%
 ```
 
-3. **Restart your client** — 8 Nexus tools will be available immediately.
+### Multi-Agent Orchestration
 
-### Option 2: One-Click (Existing Dashboard Users)
+Some tasks are too complex for a single pass. Nexus lets Claude coordinate multiple AI agents that can collaborate, compete, or specialize — then synthesize the best result.
 
-1. Go to [dashboard.adverant.ai/dashboard/api-keys](https://dashboard.adverant.ai/dashboard/api-keys)
-2. Click **"Connect to Claude"**
-3. Select your client (Claude Desktop, Claude Code, Cursor, etc.)
-4. Copy the pre-filled config and paste into your config file
+```
+You:    "Have 3 agents analyze this architecture proposal —
+         one for security, one for performance, one for cost."
 
-### Option 3: Claude Code Plugin
+Claude: Orchestrating 3 specialized agents...
 
-```bash
-claude plugin install adverant-nexus
+        Security Agent:  Found 2 critical vulnerabilities
+        Performance Agent: Identified 3 bottlenecks
+        Cost Agent: Projected 40% savings with suggested changes
+
+        Synthesized recommendation: [combined analysis]
 ```
 
-Then set your API key:
-```bash
-export NEXUS_API_KEY="your_key_here"
-```
+---
 
-## Tools
+## Complete Tool Reference
 
-| Tool | Description |
-|------|-------------|
-| `nexus_skills` | Discover, match, invoke, and manage skills from the Skills Engine |
-| `nexus_skill_synth` | Synthesize new skills by combining, chaining, or specializing existing ones |
-| `nexus_memory` | Store and recall information using GraphRAG-powered persistent memory |
-| `nexus_documents` | Store, ingest, and retrieve documents with full-text and semantic search |
-| `nexus_entities` | Manage knowledge graph entities, relationships, facts, and hierarchies |
-| `nexus_search` | Semantic, graph, and hybrid search across all stored knowledge |
-| `nexus_agents` | Multi-agent orchestration — collaborate, compete, analyze, synthesize |
-| `nexus_system` | Platform health, model stats, and system management |
+| Tool | What It Does | Example |
+|------|-------------|---------|
+| **nexus_skills** | Discover, match, and invoke skills from the marketplace | *"Find a skill for writing patents"* |
+| **nexus_skill_synth** | Combine, chain, or specialize skills into new ones | *"Chain code-review and security-analysis"* |
+| **nexus_memory** | Store and recall information across all conversations | *"Remember our API uses GraphQL"* |
+| **nexus_documents** | Store, ingest, and search documents semantically | *"Search my docs for authentication flow"* |
+| **nexus_entities** | Manage knowledge graph entities and relationships | *"What entities are related to our billing system?"* |
+| **nexus_search** | Semantic, graph, and hybrid search across all knowledge | *"Find everything related to deployment"* |
+| **nexus_agents** | Orchestrate multiple AI agents for complex tasks | *"Have agents collaborate on this analysis"* |
+| **nexus_system** | Platform health, model stats, and diagnostics | *"Check system health"* |
 
 ## Skills
 
-| Skill | Trigger |
-|-------|---------|
-| Skill Discovery | "Find a skill for...", "Search skills..." |
-| Skill Invocation | "Use skill X", "Run the code review skill" |
-| Skill Synthesis | "Combine skills X and Y", "Chain these skills..." |
-| Memory Management | "Remember this...", "What do you recall about..." |
-| Knowledge Graph | "What entities are related to...", "Show relationships..." |
-| Agent Orchestration | "Use multiple agents to...", "Have agents collaborate on..." |
+| Skill | Triggers Automatically When You Say... |
+|-------|---------------------------------------|
+| **Skill Discovery** | "Find a skill for...", "Search skills...", "What skills are available?" |
+| **Skill Invocation** | "Use the code review skill", "Run skill X on this code" |
+| **Skill Synthesis** | "Combine skills X and Y", "Chain these skills together" |
+| **Memory Management** | "Remember this...", "What do you recall about...?" |
+| **Knowledge Graph** | "What entities are related to...", "Show relationships for..." |
+| **Agent Orchestration** | "Have multiple agents...", "Use agents to collaborate on..." |
 
 ## Commands
 
-| Command | Description |
+| Command | What It Does |
 |---------|-------------|
-| `/adverant-nexus:sync-skills` | Sync published skills from Skills Engine to local filesystem |
-| `/adverant-nexus:skill-status` | Show skill usage stats and quality scores |
-| `/adverant-nexus:health` | Check platform health and connectivity |
+| `/health` | Check Nexus platform connectivity and status |
+| `/skill-status` | View skill usage stats and quality scores |
+| `/sync-skills` | Sync latest skills from the marketplace to your local environment |
+
+---
+
+## How It Works
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│                        Claude Desktop                            │
+│                                                                  │
+│   You: "Remember our API uses JWT auth with RS256 signing"       │
+│                          │                                       │
+│                          ▼                                       │
+│   ┌──────────────────────────────────────┐                       │
+│   │     Adverant Nexus Plugin            │                       │
+│   │     (MCP Server via npx)             │                       │
+│   │                                      │                       │
+│   │  Skills ─ Commands ─ Agent ─ Tools   │                       │
+│   └──────────────────┬───────────────────┘                       │
+│                      │ HTTPS + Bearer Token                      │
+└──────────────────────┼───────────────────────────────────────────┘
+                       │
+                       ▼
+         ┌─────────────────────────────┐
+         │    Adverant Nexus Platform  │
+         │    api.adverant.ai          │
+         │                             │
+         │  ┌─────────┐ ┌───────────┐ │
+         │  │ GraphRAG│ │  Skills   │ │
+         │  │ Memory  │ │  Engine   │ │
+         │  └─────────┘ └───────────┘ │
+         │  ┌─────────┐ ┌───────────┐ │
+         │  │Knowledge│ │ MageAgent │ │
+         │  │  Graph  │ │(Multi-AI) │ │
+         │  └─────────┘ └───────────┘ │
+         └─────────────────────────────┘
+```
+
+The plugin runs as an MCP (Model Context Protocol) server that bridges Claude to the Adverant Nexus cloud platform. Your data is stored securely in your personal tenant — isolated, encrypted, and accessible only with your API key.
+
+---
+
+## Who Uses This
+
+Nexus is built for people who use Claude as a daily tool, not a toy:
+
+- **Developers** who want Claude to remember their codebase, architecture decisions, and team conventions across every conversation
+- **Knowledge workers** who need Claude to recall meeting notes, project context, and research — without re-uploading everything each time
+- **AI power users** who want to build, share, and invoke reusable skills instead of writing the same prompts over and over
+- **Teams** who need Claude to maintain shared context across members — everyone's Claude knows what the team knows
+
+---
+
+## Getting Started After Install
+
+Once installed, just talk to Claude naturally:
+
+**Store a memory:**
+> "Remember that our frontend uses Next.js 14 with App Router and Tailwind CSS"
+
+**Recall later:**
+> "What tech stack does our frontend use?"
+
+**Find a skill:**
+> "Find me a skill for creating research papers"
+
+**Run a command:**
+> Type `/health` to verify the connection
+
+**Search your knowledge:**
+> "Search my documents for anything about database migrations"
+
+---
 
 ## Environment Variables
 
+The MCP server accepts these optional environment variables via the plugin config:
+
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `NEXUS_API_KEY` | Yes | — | Your Adverant API key |
-| `NEXUS_API_URL` | No | `https://api.adverant.ai` | API endpoint URL |
+| `NEXUS_API_KEY` | Yes | — | Your Adverant API key ([get one here](https://dashboard.adverant.ai/dashboard/api-keys)) |
+| `NEXUS_API_URL` | No | `https://api.adverant.ai` | API endpoint |
 | `NEXUS_USER_ID` | No | `$USER` | User identifier |
-| `NEXUS_TIMEOUT` | No | `30000` | Request timeout in ms |
+| `NEXUS_TIMEOUT` | No | `30000` | Request timeout (ms) |
 
-## Getting an API Key
+---
 
-1. Sign up at [adverant.ai](https://adverant.ai)
-2. Go to [Dashboard > API Keys](https://dashboard.adverant.ai/dashboard/api-keys)
-3. Click **Create API Key**
-4. Copy the key and add it to your MCP config
+## Updating
 
-## Development
+The plugin auto-updates when you click **Sync** in Browse Plugins. The MCP server also auto-updates via `npx @latest` on each restart.
+
+To manually sync the latest skills:
+> Type `/sync-skills` in any Cowork conversation
+
+---
+
+## FAQ
+
+**Do I need an API key?**
+Yes. Sign up free at [adverant.ai](https://adverant.ai), then get your key from [Dashboard > API Keys](https://dashboard.adverant.ai/dashboard/api-keys).
+
+**Is my data private?**
+Yes. Each user gets an isolated tenant. Your memories, documents, and knowledge graph are encrypted and accessible only with your API key.
+
+**Does it work with Claude Code?**
+Yes. Add to your `.mcp.json`:
+```json
+{
+  "mcpServers": {
+    "nexus": {
+      "command": "npx",
+      "args": ["-y", "@adverant/nexus-cowork-plugin"],
+      "env": { "NEXUS_API_KEY": "YOUR_KEY" }
+    }
+  }
+}
+```
+
+**What happens if the Nexus API is down?**
+Claude continues working normally — you just won't have access to memories/skills until the connection is restored. Type `/health` to check status.
+
+---
+
+## Contributing
 
 ```bash
-cd server
+git clone https://github.com/adverant/adverant-nexus-cowork-plugin.git
+cd adverant-nexus-cowork-plugin/server
 npm install
 npm run build
 npm start
 ```
 
-## License
+---
 
-MIT
+<p align="center">
+  Built by <a href="https://adverant.ai">Adverant</a> · <a href="https://dashboard.adverant.ai">Dashboard</a> · <a href="https://github.com/adverant/adverant-nexus-cowork-plugin/issues">Report Issues</a>
+</p>
