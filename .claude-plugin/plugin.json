@@ -1,0 +1,24 @@
+{
+  "name": "adverant-nexus",
+  "version": "1.0.0",
+  "description": "GraphRAG memory, Skills Engine, knowledge graphs, and multi-agent orchestration for Claude. Discover skills, synthesize workflows, store memories, and coordinate AI agents via the Adverant Nexus platform.",
+  "author": {
+    "name": "Adverant",
+    "email": "support@adverant.ai",
+    "url": "https://adverant.ai"
+  },
+  "homepage": "https://adverant.ai/nexus",
+  "repository": "https://github.com/adverant/adverant-nexus-cowork-plugin",
+  "license": "MIT",
+  "keywords": [
+    "graphrag",
+    "memory",
+    "skills",
+    "knowledge-graph",
+    "multi-agent",
+    "orchestration",
+    "rag",
+    "synthesis",
+    "skills-engine"
+  ]
+}
