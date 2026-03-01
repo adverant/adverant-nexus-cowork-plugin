@@ -1,6 +1,6 @@
 {
   "name": "@adverant/nexus-cowork-plugin",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Adverant Nexus MCP server for Claude Cowork — Skills Engine, GraphRAG memory, knowledge graphs, and multi-agent orchestration",
   "author": "Adverant <support@adverant.ai>",
   "license": "MIT",
