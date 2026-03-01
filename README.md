@@ -169,11 +169,11 @@ Claude: Orchestrating 3 specialized agents...
 │                          ▼                                       │
 │   ┌──────────────────────────────────────┐                       │
 │   │     Adverant Nexus Plugin            │                       │
-│   │     (MCP Server via npx)             │                       │
+│   │     (Remote MCP via HTTP)            │                       │
 │   │                                      │                       │
 │   │  Skills ─ Commands ─ Agent ─ Tools   │                       │
 │   └──────────────────┬───────────────────┘                       │
-│                      │ HTTPS + Bearer Token                      │
+│                      │ HTTPS + OAuth 2.1                         │
 └──────────────────────┼───────────────────────────────────────────┘
                        │
                        ▼
@@ -192,7 +192,7 @@ Claude: Orchestrating 3 specialized agents...
          └─────────────────────────────┘
 ```
 
-The plugin runs as an MCP (Model Context Protocol) server that bridges Claude to the Adverant Nexus cloud platform. Your data is stored securely in your personal tenant — isolated, encrypted, and accessible only with your API key.
+The plugin connects to the Adverant Nexus cloud platform via a remote HTTP MCP server — no local installation required. Your data is stored securely in your personal tenant — isolated, encrypted, and accessible only through your authenticated session.
 
 ---
 
@@ -228,22 +228,41 @@ Once installed, just talk to Claude naturally:
 
 ---
 
-## Environment Variables
+## Also Works With Claude Code, Cursor, Windsurf & More
 
-The MCP server accepts these optional environment variables via the plugin config:
+The plugin uses a remote HTTP MCP server, so it works with any MCP-compatible client.
 
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `NEXUS_API_KEY` | Yes | — | Your Adverant API key ([get one here](https://dashboard.adverant.ai/dashboard/api-keys)) |
-| `NEXUS_API_URL` | No | `https://api.adverant.ai` | API endpoint |
-| `NEXUS_USER_ID` | No | `$USER` | User identifier |
-| `NEXUS_TIMEOUT` | No | `30000` | Request timeout (ms) |
+**Claude Code** (`.mcp.json` in project root):
+```json
+{
+  "mcpServers": {
+    "nexus": {
+      "type": "http",
+      "url": "https://api.adverant.ai/mcp/message"
+    }
+  }
+}
+```
+
+**Cursor** (`.cursor/mcp.json`):
+```json
+{
+  "mcpServers": {
+    "nexus": {
+      "type": "http",
+      "url": "https://api.adverant.ai/mcp/message"
+    }
+  }
+}
+```
+
+Or use the **AI Connections** page on [dashboard.adverant.ai/dashboard/settings/ai-connections](https://dashboard.adverant.ai/dashboard/settings/ai-connections) to generate config for any client with one click.
 
 ---
 
 ## Updating
 
-The plugin auto-updates when you click **Sync** in Browse Plugins. The MCP server also auto-updates via `npx @latest` on each restart.
+The plugin auto-updates when you click **Sync** in Browse Plugins.
 
 To manually sync the latest skills:
 > Type `/sync-skills` in any Cowork conversation
@@ -253,24 +272,14 @@ To manually sync the latest skills:
 ## FAQ
 
 **Do I need an API key?**
-Yes. Sign up free at [adverant.ai](https://adverant.ai), then get your key from [Dashboard > API Keys](https://dashboard.adverant.ai/dashboard/api-keys).
+For **Cowork** (Claude Desktop): No. The plugin authenticates via OAuth when you install it — no API key needed.
+For **Claude Code / Cursor / other clients**: You can use either OAuth or an API key. Get a free key at [Dashboard > API Keys](https://dashboard.adverant.ai/dashboard/api-keys), or configure OAuth via [Dashboard > Settings > AI Connections](https://dashboard.adverant.ai/dashboard/settings/ai-connections).
 
 **Is my data private?**
-Yes. Each user gets an isolated tenant. Your memories, documents, and knowledge graph are encrypted and accessible only with your API key.
+Yes. Each user gets an isolated tenant. Your memories, documents, and knowledge graph are encrypted and accessible only through your authenticated session.
 
-**Does it work with Claude Code?**
-Yes. Add to your `.mcp.json`:
-```json
-{
-  "mcpServers": {
-    "nexus": {
-      "command": "npx",
-      "args": ["-y", "@adverant/nexus-cowork-plugin"],
-      "env": { "NEXUS_API_KEY": "YOUR_KEY" }
-    }
-  }
-}
-```
+**Does it work offline?**
+No. The plugin connects to the Adverant Nexus cloud platform. Claude itself continues working normally if the connection is lost — you just won't have access to memories/skills until restored. Type `/health` to check status.
 
 **What happens if the Nexus API is down?**
 Claude continues working normally — you just won't have access to memories/skills until the connection is restored. Type `/health` to check status.

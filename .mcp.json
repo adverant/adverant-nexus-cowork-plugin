@@ -1,12 +1,8 @@
 {
   "mcpServers": {
     "nexus": {
-      "command": "npx",
-      "args": ["-y", "@adverant/nexus-cowork-plugin@latest"],
-      "env": {
-        "NEXUS_API_URL": "https://api.adverant.ai",
-        "NEXUS_API_KEY": "${NEXUS_API_KEY}"
-      }
+      "type": "http",
+      "url": "https://api.adverant.ai/mcp/message"
     }
   }
 }
