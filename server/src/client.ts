@@ -43,6 +43,8 @@ export class NexusClient {
   constructor(config: NexusConfig) {
     this.config = config;
 
+    const userId = config.userId || process.env.USER || 'anonymous';
+
     // Main API client (GraphRAG, MageAgent, documents, entities, etc.)
     this.http = axios.create({
       baseURL: config.apiUrl,
@@ -50,6 +52,9 @@ export class NexusClient {
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${config.apiKey}`,
+        'X-Company-ID': 'adverant',
+        'X-App-ID': 'nexus-cowork',
+        'X-User-ID': userId,
       },
     });
 
@@ -60,7 +65,9 @@ export class NexusClient {
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${config.apiKey}`,
-        'X-User-ID': config.userId || process.env.USER || 'anonymous',
+        'X-Company-ID': 'adverant',
+        'X-App-ID': 'nexus-cowork',
+        'X-User-ID': userId,
       },
     });
 
