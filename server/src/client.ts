@@ -9,6 +9,7 @@
  */
 
 import axios, { AxiosInstance, AxiosError } from 'axios';
+import axiosRetry from 'axios-retry';
 
 // ---------------------------------------------------------------------------
 // Configuration
@@ -58,6 +59,21 @@ export class NexusClient {
       },
     });
 
+    // Retry transient failures with exponential backoff
+    axiosRetry(this.http, {
+      retries: 3,
+      retryDelay: axiosRetry.exponentialDelay,
+      retryCondition: (error) =>
+        axiosRetry.isNetworkOrIdempotentRequestError(error) ||
+        error.response?.status === 429 ||
+        error.response?.status === 502 ||
+        error.response?.status === 503 ||
+        error.response?.status === 504,
+      onRetry: (retryCount, error, requestConfig) => {
+        console.error(`[nexus-client] Retry #${retryCount} for ${requestConfig.url}: ${error.message}`);
+      }
+    });
+
     // Skills Engine client (skills-specific endpoints under /api/skills)
     this.skillsHttp = axios.create({
       baseURL: `${config.apiUrl}/api/skills`,
@@ -69,6 +85,20 @@ export class NexusClient {
         'X-App-ID': 'nexus-cowork',
         'X-User-ID': userId,
       },
+    });
+
+    axiosRetry(this.skillsHttp, {
+      retries: 3,
+      retryDelay: axiosRetry.exponentialDelay,
+      retryCondition: (error) =>
+        axiosRetry.isNetworkOrIdempotentRequestError(error) ||
+        error.response?.status === 429 ||
+        error.response?.status === 502 ||
+        error.response?.status === 503 ||
+        error.response?.status === 504,
+      onRetry: (retryCount, error, requestConfig) => {
+        console.error(`[nexus-skills] Retry #${retryCount} for ${requestConfig.url}: ${error.message}`);
+      }
     });
 
     this.http.interceptors.response.use(
