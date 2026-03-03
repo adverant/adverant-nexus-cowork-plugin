@@ -1,8 +1,8 @@
 {
   "mcpServers": {
     "nexus": {
-      "type": "sse",
-      "url": "https://api.adverant.ai/mcp/sse"
+      "type": "http",
+      "url": "https://api.adverant.ai/mcp/message"
     }
   }
 }
