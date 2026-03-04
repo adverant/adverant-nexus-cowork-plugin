@@ -228,7 +228,9 @@ export class NexusClient {
     userTier: string;
     activePlugins: any[];
   }> {
-    const { data } = await this.http.get('/api/tools/inventory');
+    const { data } = await this.http.get('/api/tools/inventory', {
+      params: { surface: 'cowork' },
+    });
     return data;
   }
 

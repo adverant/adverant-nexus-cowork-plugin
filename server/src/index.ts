@@ -74,8 +74,18 @@ const nexusClient = new NexusClient(config);
 // Names of the 8 consolidated tools (used to avoid duplicates during discovery)
 const consolidatedToolNames = new Set(NEXUS_TOOLS.map(t => t.name));
 
-// Dynamic tools discovered at startup (additive — these extend the core 8)
-let discoveredTools: Tool[] = [];
+// Dynamic tools with TTL cache (refreshed per-request, max once per minute)
+let toolCache: { tools: Tool[]; expiresAt: number } | null = null;
+const TOOL_CACHE_TTL = 60_000; // 1 minute
+
+async function getDiscoveredTools(): Promise<Tool[]> {
+  if (toolCache && Date.now() < toolCache.expiresAt) {
+    return toolCache.tools;
+  }
+  const tools = await discoverTools();
+  toolCache = { tools, expiresAt: Date.now() + TOOL_CACHE_TTL };
+  return tools;
+}
 
 const server = new Server(
   {
@@ -138,9 +148,10 @@ async function discoverTools(): Promise<Tool[]> {
 // Handlers
 // ---------------------------------------------------------------------------
 
-// List tools — core 8 + any discovered dynamic tools
+// List tools — core 8 + any discovered dynamic tools (refreshed via TTL cache)
 server.setRequestHandler(ListToolsRequestSchema, async () => {
-  return { tools: [...NEXUS_TOOLS, ...discoveredTools] };
+  const dynamicTools = await getDiscoveredTools();
+  return { tools: [...NEXUS_TOOLS, ...dynamicTools] };
 });
 
 // Handle tool calls
@@ -193,16 +204,17 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 // ---------------------------------------------------------------------------
 
 async function main(): Promise<void> {
-  // Discover dynamic tools before connecting (non-blocking on failure)
-  discoveredTools = await discoverTools();
+  // Pre-warm the tool cache before connecting (non-blocking on failure)
+  toolCache = { tools: await discoverTools(), expiresAt: Date.now() + TOOL_CACHE_TTL };
 
   const transport = new StdioServerTransport();
   await server.connect(transport);
 
-  const totalTools = NEXUS_TOOLS.length + discoveredTools.length;
+  const dynamicCount = toolCache?.tools.length || 0;
+  const totalTools = NEXUS_TOOLS.length + dynamicCount;
   console.error(`Adverant Nexus MCP server started`);
   console.error(`  API: ${config.apiUrl}`);
-  console.error(`  Tools: ${totalTools} (${NEXUS_TOOLS.length} core + ${discoveredTools.length} dynamic)`);
+  console.error(`  Tools: ${totalTools} (${NEXUS_TOOLS.length} core + ${dynamicCount} dynamic)`);
   console.error(`  User: ${config.userId}`);
 }
 
