@@ -2,8 +2,11 @@
 /**
  * Adverant Nexus — Unified Cowork Plugin MCP Server
  *
- * Entry point for the MCP server that provides 8 consolidated gateway
- * tools covering the entire Nexus platform:
+ * Entry point for the MCP server that provides consolidated gateway tools
+ * covering the entire Nexus platform. Tools are discovered dynamically
+ * based on the user's subscription tier and installed marketplace plugins.
+ *
+ * Core tools (always available):
  *   - Skills Engine (discover, invoke, synthesize, sync)
  *   - GraphRAG Memory (store, recall, episodes)
  *   - Documents (store, ingest, retrieve)
@@ -11,6 +14,10 @@
  *   - Search & Retrieval (semantic, graph, hybrid)
  *   - Agent Orchestration (MageAgent)
  *   - System Health & Model Management
+ *
+ * Dynamic tools (tier + plugin dependent):
+ *   - Validation, K8s, codebase, infrastructure tools (higher tiers)
+ *   - Marketplace plugin tools (per installed plugins)
  *
  * Authentication: Requires NEXUS_API_KEY environment variable.
  * Transport: STDIO (default for Claude Desktop/Cowork plugins).
@@ -22,6 +29,7 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
+import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import { NexusClient } from './client.js';
 import { NEXUS_TOOLS, handleToolCall } from './tools.js';
 
@@ -63,10 +71,16 @@ if (!config.apiKey) {
 
 const nexusClient = new NexusClient(config);
 
+// Names of the 8 consolidated tools (used to avoid duplicates during discovery)
+const consolidatedToolNames = new Set(NEXUS_TOOLS.map(t => t.name));
+
+// Dynamic tools discovered at startup (additive — these extend the core 8)
+let discoveredTools: Tool[] = [];
+
 const server = new Server(
   {
     name: 'adverant-nexus',
-    version: '1.0.0',
+    version: '1.0.7',
   },
   {
     capabilities: {
@@ -76,12 +90,57 @@ const server = new Server(
 );
 
 // ---------------------------------------------------------------------------
+// Dynamic Tool Discovery
+// ---------------------------------------------------------------------------
+
+/**
+ * Discover additional tools from the gateway based on user's tier + plugins.
+ * This is additive — the 8 consolidated tools are always available regardless.
+ * If discovery fails, the plugin works exactly as before with just the 8 tools.
+ */
+async function discoverTools(): Promise<Tool[]> {
+  try {
+    const inventory = await nexusClient.getToolInventory();
+
+    // Platform tools not already covered by the 8 consolidated tools
+    const extraPlatformTools: Tool[] = (inventory.platformTools || [])
+      .filter((t: any) => !consolidatedToolNames.has(t.name))
+      .map((t: any) => ({
+        name: t.name,
+        description: t.description,
+        inputSchema: t.inputSchema || { type: 'object' as const, properties: {} },
+      }));
+
+    // Marketplace plugin tools
+    const pluginTools: Tool[] = (inventory.pluginTools || []).map((pt: any) => ({
+      name: pt.name,
+      description: `[${pt.pluginName}] ${pt.description}`,
+      inputSchema: pt.inputSchema || { type: 'object' as const, properties: {} },
+    }));
+
+    const tools = [...extraPlatformTools, ...pluginTools];
+
+    console.error(`  Dynamic tools: ${tools.length} discovered (${extraPlatformTools.length} platform, ${pluginTools.length} plugin)`);
+    console.error(`  Tier: ${inventory.userTier}`);
+    if (inventory.activePlugins?.length > 0) {
+      console.error(`  Plugins: ${inventory.activePlugins.map((p: any) => p.pluginSlug).join(', ')}`);
+    }
+
+    return tools;
+  } catch (err) {
+    // Discovery failure is non-fatal — plugin works with core 8 tools
+    console.error(`  Dynamic discovery unavailable: ${err instanceof Error ? err.message : String(err)}`);
+    return [];
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Handlers
 // ---------------------------------------------------------------------------
 
-// List tools
+// List tools — core 8 + any discovered dynamic tools
 server.setRequestHandler(ListToolsRequestSchema, async () => {
-  return { tools: NEXUS_TOOLS };
+  return { tools: [...NEXUS_TOOLS, ...discoveredTools] };
 });
 
 // Handle tool calls
@@ -89,11 +148,24 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params;
 
   try {
-    const result = await handleToolCall(
-      nexusClient,
-      name,
-      (args as Record<string, any>) || {}
-    );
+    let result;
+
+    // Core consolidated tools use the optimized local handler
+    if (consolidatedToolNames.has(name)) {
+      result = await handleToolCall(
+        nexusClient,
+        name,
+        (args as Record<string, any>) || {}
+      );
+    } else {
+      // Dynamic tool — proxy through gateway's /api/tools/execute
+      const response = await nexusClient.executeTool(
+        name,
+        (args as Record<string, any>) || {}
+      );
+      result = response.result ?? response;
+    }
+
     return {
       content: [
         {
@@ -121,12 +193,16 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 // ---------------------------------------------------------------------------
 
 async function main(): Promise<void> {
+  // Discover dynamic tools before connecting (non-blocking on failure)
+  discoveredTools = await discoverTools();
+
   const transport = new StdioServerTransport();
   await server.connect(transport);
 
+  const totalTools = NEXUS_TOOLS.length + discoveredTools.length;
   console.error(`Adverant Nexus MCP server started`);
   console.error(`  API: ${config.apiUrl}`);
-  console.error(`  Tools: ${NEXUS_TOOLS.length}`);
+  console.error(`  Tools: ${totalTools} (${NEXUS_TOOLS.length} core + ${discoveredTools.length} dynamic)`);
   console.error(`  User: ${config.userId}`);
 }
 

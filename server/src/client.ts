@@ -213,6 +213,38 @@ export class NexusClient {
   }
 
   // =========================================================================
+  // Dynamic Tool Discovery & Execution
+  // =========================================================================
+
+  /**
+   * Fetch the user's complete tool inventory from the gateway.
+   * Returns platform tools (tier-filtered) + marketplace plugin tools.
+   */
+  async getToolInventory(): Promise<{
+    platformTools: any[];
+    pluginTools: any[];
+    blockedTools: any[];
+    summary: { totalAvailable: number; platformCount: number; pluginCount: number; blockedCount: number };
+    userTier: string;
+    activePlugins: any[];
+  }> {
+    const { data } = await this.http.get('/api/tools/inventory');
+    return data;
+  }
+
+  /**
+   * Execute any tool via the gateway's generic execution endpoint.
+   * Handles both platform tools (SmartRouter) and plugin tools (PluginClient).
+   */
+  async executeTool(toolName: string, args: Record<string, any>): Promise<any> {
+    const { data } = await this.http.post('/api/tools/execute', {
+      tool: toolName,
+      arguments: args,
+    });
+    return data;
+  }
+
+  // =========================================================================
   // Memory Operations
   // =========================================================================
 

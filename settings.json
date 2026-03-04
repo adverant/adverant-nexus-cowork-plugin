@@ -1,14 +1,7 @@
 {
   "permissions": {
     "allow": [
-      "mcp__nexus__nexus_skills",
-      "mcp__nexus__nexus_skill_synth",
-      "mcp__nexus__nexus_memory",
-      "mcp__nexus__nexus_documents",
-      "mcp__nexus__nexus_entities",
-      "mcp__nexus__nexus_search",
-      "mcp__nexus__nexus_agents",
-      "mcp__nexus__nexus_system"
+      "mcp__nexus__*"
     ]
   }
 }
