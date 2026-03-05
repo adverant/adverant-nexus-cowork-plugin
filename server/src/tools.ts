@@ -18,13 +18,13 @@ export const NEXUS_TOOLS: Tool[] = [
   {
     name: 'nexus_skills',
     description:
-      'Interact with the Nexus Skills Engine. Actions: list (browse skills), get (full details + SKILL.md), discover (semantic search), match (match prompt to skills), invoke (run a skill), quality (quality score breakdown), related (find similar), top (top-ranked), record (log execution), sync (sync to local ~/.claude/skills/).',
+      'Interact with the Nexus Skills Engine. Actions: list (browse skills), get (full details + SKILL.md), discover (semantic search), match (match prompt to skills), invoke (run a skill), create (generate new skill from prompt), check_job (poll creation progress), quality (quality score breakdown), related (find similar), top (top-ranked), record (log execution), sync (sync to local ~/.claude/skills/).',
     inputSchema: {
       type: 'object',
       properties: {
         action: {
           type: 'string',
-          enum: ['list', 'get', 'discover', 'match', 'invoke', 'quality', 'related', 'top', 'record', 'sync'],
+          enum: ['list', 'get', 'discover', 'match', 'invoke', 'create', 'check_job', 'quality', 'related', 'top', 'record', 'sync'],
           description: 'The operation to perform',
         },
         skill_id: { type: 'string', description: 'Skill ID (for get, invoke, quality, related)' },
@@ -39,6 +39,13 @@ export const NEXUS_TOOLS: Tool[] = [
         limit: { type: 'number', description: 'Max results (default varies by action)' },
         offset: { type: 'number', description: 'Pagination offset (for list)' },
         force: { type: 'boolean', description: 'Force overwrite (for sync)' },
+        reference_skills: { type: 'array', items: { type: 'string' }, description: 'Skill IDs to use as reference (for create)' },
+        reference_urls: { type: 'array', items: { type: 'string' }, description: 'Documentation URLs (for create)' },
+        visibility: { type: 'string', enum: ['private', 'team', 'public'], description: 'Skill visibility (for create, default: private)' },
+        max_complexity: { type: 'string', enum: ['simple', 'moderate', 'complex', 'expert'], description: 'Max complexity (for create)' },
+        allowed_tools: { type: 'array', items: { type: 'string' }, description: 'Allowed tools (for create)' },
+        max_token_budget: { type: 'number', description: 'Max token budget (for create)' },
+        job_id: { type: 'string', description: 'Generation job ID (for check_job)' },
         skill_name: { type: 'string', description: 'Skill name (for record)' },
         execution_status: { type: 'string', enum: ['success', 'failure', 'partial'], description: 'Execution result (for record)' },
         duration: { type: 'number', description: 'Execution time ms (for record)' },
@@ -274,6 +281,22 @@ export async function handleToolCall(
         case 'invoke':
           if (!args.skill_id) throw new Error('skill_id is required for invoke action');
           return client.invokeSkill(args.skill_id, args.input);
+        case 'create':
+          if (!args.prompt) throw new Error('prompt is required for create action');
+          return client.generateSkill({
+            prompt: args.prompt,
+            referenceSkills: args.reference_skills,
+            referenceUrls: args.reference_urls,
+            constraints: {
+              maxComplexity: args.max_complexity,
+              allowedTools: args.allowed_tools,
+              maxTokenBudget: args.max_token_budget,
+            },
+            visibility: args.visibility || 'private',
+          });
+        case 'check_job':
+          if (!args.job_id) throw new Error('job_id is required for check_job action');
+          return client.getSkillJobStatus(args.job_id);
         case 'quality':
           if (!args.skill_id) throw new Error('skill_id is required for quality action');
           return client.getQualityScore(args.skill_id);

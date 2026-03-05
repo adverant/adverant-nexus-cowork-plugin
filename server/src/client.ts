@@ -193,6 +193,28 @@ export class NexusClient {
     return data;
   }
 
+  async generateSkill(request: {
+    prompt: string;
+    referenceSkills?: string[];
+    referenceUrls?: string[];
+    constraints?: {
+      maxComplexity?: string;
+      allowedTools?: string[];
+      maxTokenBudget?: number;
+    };
+    visibility?: string;
+  }): Promise<any> {
+    const { data } = await this.skillsHttp.post('/generate', request, {
+      timeout: 60000,
+    });
+    return data;
+  }
+
+  async getSkillJobStatus(jobId: string): Promise<any> {
+    const { data } = await this.skillsHttp.get(`/jobs/${jobId}`);
+    return data;
+  }
+
   async synthesizeSkills(params: {
     sourceSkillIds: string[];
     strategy: string;
