@@ -71,7 +71,7 @@ if (!config.apiKey) {
 
 const nexusClient = new NexusClient(config);
 
-// Names of the 8 consolidated tools (used to avoid duplicates during discovery)
+// Names of the 9 consolidated tools (used to avoid duplicates during discovery)
 const consolidatedToolNames = new Set(NEXUS_TOOLS.map(t => t.name));
 
 // Dynamic tools with TTL cache (refreshed per-request, max once per minute)
@@ -105,14 +105,14 @@ const server = new Server(
 
 /**
  * Discover additional tools from the gateway based on user's tier + plugins.
- * This is additive — the 8 consolidated tools are always available regardless.
- * If discovery fails, the plugin works exactly as before with just the 8 tools.
+ * This is additive — the 9 consolidated tools are always available regardless.
+ * If discovery fails, the plugin works exactly as before with just the 9 tools.
  */
 async function discoverTools(): Promise<Tool[]> {
   try {
     const inventory = await nexusClient.getToolInventory();
 
-    // Platform tools not already covered by the 8 consolidated tools
+    // Platform tools not already covered by the 9 consolidated tools
     const extraPlatformTools: Tool[] = (inventory.platformTools || [])
       .filter((t: any) => !consolidatedToolNames.has(t.name))
       .map((t: any) => ({
@@ -121,24 +121,22 @@ async function discoverTools(): Promise<Tool[]> {
         inputSchema: t.inputSchema || { type: 'object' as const, properties: {} },
       }));
 
-    // Marketplace plugin tools
-    const pluginTools: Tool[] = (inventory.pluginTools || []).map((pt: any) => ({
-      name: pt.name,
-      description: `[${pt.pluginName}] ${pt.description}`,
-      inputSchema: pt.inputSchema || { type: 'object' as const, properties: {} },
-    }));
+    // Plugin tools are NOT added individually — they're accessed via the
+    // nexus_plugin dispatcher tool, which saves ~2,000 tokens per plugin
+    // in the system prompt. Use nexus_plugin(action: 'discover') to list them.
+    const pluginToolCount = (inventory.pluginTools || []).length;
 
-    const tools = [...extraPlatformTools, ...pluginTools];
+    const tools = [...extraPlatformTools];
 
-    console.error(`  Dynamic tools: ${tools.length} discovered (${extraPlatformTools.length} platform, ${pluginTools.length} plugin)`);
+    console.error(`  Dynamic tools: ${tools.length} platform discovered (${pluginToolCount} plugin tools available via nexus_plugin dispatcher)`);
     console.error(`  Tier: ${inventory.userTier}`);
     if (inventory.activePlugins?.length > 0) {
-      console.error(`  Plugins: ${inventory.activePlugins.map((p: any) => p.pluginSlug).join(', ')}`);
+      console.error(`  Plugins (via dispatcher): ${inventory.activePlugins.map((p: any) => p.pluginSlug).join(', ')}`);
     }
 
     return tools;
   } catch (err) {
-    // Discovery failure is non-fatal — plugin works with core 8 tools
+    // Discovery failure is non-fatal — plugin works with core 9 tools
     console.error(`  Dynamic discovery unavailable: ${err instanceof Error ? err.message : String(err)}`);
     return [];
   }
@@ -148,7 +146,7 @@ async function discoverTools(): Promise<Tool[]> {
 // Handlers
 // ---------------------------------------------------------------------------
 
-// List tools — core 8 + any discovered dynamic tools (refreshed via TTL cache)
+// List tools — core 9 + any discovered dynamic tools (refreshed via TTL cache)
 server.setRequestHandler(ListToolsRequestSchema, async () => {
   const dynamicTools = await getDiscoveredTools();
   return { tools: [...NEXUS_TOOLS, ...dynamicTools] };

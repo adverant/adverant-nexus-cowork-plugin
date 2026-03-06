@@ -1,8 +1,9 @@
 /**
- * 8 Consolidated Gateway Tools
+ * 9 Consolidated Gateway Tools
  *
- * Reduces 52 individual tools to 8 gateway tools with action routing.
- * ~85% token reduction in system prompt (2,400 vs 15,600 tokens).
+ * Reduces 52+ individual tools to 9 gateway tools with action routing.
+ * ~85% token reduction in system prompt. Plugin tools are collapsed behind
+ * the nexus_plugin dispatcher (O(1) context cost instead of O(N*M)).
  */
 import { syncSkillsToFilesystem } from './sync.js';
 // ---------------------------------------------------------------------------
@@ -204,7 +205,26 @@ export const NEXUS_TOOLS = [
             required: ['action'],
         },
     },
-    // 8. System
+    // 8. Plugin Dispatcher
+    {
+        name: 'nexus_plugin',
+        description: 'Execute any installed marketplace plugin tool. Actions: discover (list available plugin tools, optionally filter by plugin_slug), execute (run a plugin tool by name with arguments).',
+        inputSchema: {
+            type: 'object',
+            properties: {
+                action: {
+                    type: 'string',
+                    enum: ['discover', 'execute'],
+                    description: 'The operation to perform',
+                },
+                tool_name: { type: 'string', description: 'Full tool name to execute (for execute action, e.g. "prose_list_projects")' },
+                arguments: { type: 'object', description: 'Tool arguments (for execute action)' },
+                plugin_slug: { type: 'string', description: 'Filter tools by plugin slug (for discover, optional)' },
+            },
+            required: ['action'],
+        },
+    },
+    // 9. System
     {
         name: 'nexus_system',
         description: 'System health and model management. Actions: health (service status), stats (memory statistics), model_stats (model usage), model_select (choose best model for task).',
@@ -460,6 +480,41 @@ export async function handleToolCall(client, toolName, args) {
                     return client.getTaskStatus(args.task_id);
                 default:
                     throw new Error(`Unknown nexus_agents action: ${args.action}`);
+            }
+        }
+        // -----------------------------------------------------------------------
+        // nexus_plugin (dispatcher for marketplace plugin tools)
+        // -----------------------------------------------------------------------
+        case 'nexus_plugin': {
+            switch (args.action) {
+                case 'discover': {
+                    const inventory = await client.getToolInventory();
+                    let pluginTools = (inventory.pluginTools || []).map((pt) => ({
+                        name: pt.name,
+                        plugin: pt.pluginName || pt.pluginSlug,
+                        description: pt.description,
+                        inputSchema: pt.inputSchema,
+                    }));
+                    if (args.plugin_slug) {
+                        pluginTools = pluginTools.filter((t) => t.plugin?.toLowerCase().includes(args.plugin_slug.toLowerCase()));
+                    }
+                    return {
+                        plugins: inventory.activePlugins?.map((p) => ({
+                            slug: p.pluginSlug,
+                            name: p.displayName || p.pluginName,
+                        })) || [],
+                        tools: pluginTools,
+                        count: pluginTools.length,
+                    };
+                }
+                case 'execute': {
+                    if (!args.tool_name)
+                        throw new Error('tool_name is required for execute action');
+                    const result = await client.executeTool(args.tool_name, args.arguments || {});
+                    return result.result ?? result;
+                }
+                default:
+                    throw new Error(`Unknown nexus_plugin action: ${args.action}`);
             }
         }
         // -----------------------------------------------------------------------

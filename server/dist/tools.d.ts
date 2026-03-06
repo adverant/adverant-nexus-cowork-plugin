@@ -1,8 +1,9 @@
 /**
- * 8 Consolidated Gateway Tools
+ * 9 Consolidated Gateway Tools
  *
- * Reduces 52 individual tools to 8 gateway tools with action routing.
- * ~85% token reduction in system prompt (2,400 vs 15,600 tokens).
+ * Reduces 52+ individual tools to 9 gateway tools with action routing.
+ * ~85% token reduction in system prompt. Plugin tools are collapsed behind
+ * the nexus_plugin dispatcher (O(1) context cost instead of O(N*M)).
  */
 import { Tool } from '@modelcontextprotocol/sdk/types.js';
 import { NexusClient } from './client.js';
