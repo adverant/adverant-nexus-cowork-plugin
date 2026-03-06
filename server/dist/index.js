@@ -74,7 +74,7 @@ async function getDiscoveredTools() {
 }
 const server = new Server({
     name: 'adverant-nexus',
-    version: '1.0.8',
+    version: '1.1.0',
 }, {
     capabilities: {
         tools: {},
