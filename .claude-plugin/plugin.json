@@ -1,6 +1,6 @@
 {
   "name": "adverant-nexus",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Give Claude persistent memory, a skills marketplace, and multi-agent superpowers. Claude forgets everything between conversations — Nexus fixes that. Store memories in a GraphRAG knowledge graph that persists forever, discover and invoke 50+ reusable AI skills, synthesize new workflows by combining existing ones, manage documents with semantic search, orchestrate multiple AI agents for complex tasks, and access all marketplace plugin tools through a unified dispatcher. 9 tools, 6 skills, 3 commands — one plugin.",
   "author": {
     "name": "Adverant",
