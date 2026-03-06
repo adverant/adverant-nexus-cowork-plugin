@@ -273,7 +273,7 @@ export class NexusClient {
   // =========================================================================
 
   async storeMemory(content: string, tags?: string[], metadata?: any): Promise<NexusResponse> {
-    return this.executeTool('nexus_store_memory', { content, tags, metadata });
+    return this.executeTool('nexus_store_memory', { content, tags, metadata, event_type: 'learning' });
   }
 
   async recallMemory(query: string, limit?: number, scoreThreshold?: number): Promise<NexusResponse> {
@@ -289,6 +289,7 @@ export class NexusClient {
       content,
       episodeType: type,
       metadata,
+      event_type: 'learning',
       forceEpisodicStorage: true,
     });
   }
