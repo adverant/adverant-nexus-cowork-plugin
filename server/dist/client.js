@@ -174,36 +174,28 @@ export class NexusClient {
     // Memory Operations
     // =========================================================================
     async storeMemory(content, tags, metadata) {
-        const { data } = await this.http.post('/api/v2/memory', { content, tags, metadata });
-        return data;
+        return this.executeTool('nexus_store_memory', { content, tags, metadata });
     }
     async recallMemory(query, limit, scoreThreshold) {
-        const { data } = await this.http.post('/api/retrieve/enhanced', {
+        return this.executeTool('nexus_recall_memory', {
             query,
             limit,
             score_threshold: scoreThreshold,
-            includeEpisodic: true,
-            includeDocuments: true,
         });
-        return data;
     }
     async storeEpisode(content, type, metadata) {
-        const { data } = await this.http.post('/api/v2/memory', {
+        return this.executeTool('nexus_store_episode', {
             content,
             episodeType: type,
             metadata,
             forceEpisodicStorage: true,
         });
-        return data;
     }
     async recallEpisodes(query, limit) {
-        const { data } = await this.http.post('/api/retrieve/enhanced', {
+        return this.executeTool('nexus_recall_episodes', {
             query,
             limit,
-            includeEpisodic: true,
-            includeDocuments: false,
         });
-        return data;
     }
     // =========================================================================
     // Document Operations

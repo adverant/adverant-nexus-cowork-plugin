@@ -273,39 +273,31 @@ export class NexusClient {
   // =========================================================================
 
   async storeMemory(content: string, tags?: string[], metadata?: any): Promise<NexusResponse> {
-    const { data } = await this.http.post('/api/v2/memory', { content, tags, metadata });
-    return data;
+    return this.executeTool('nexus_store_memory', { content, tags, metadata });
   }
 
   async recallMemory(query: string, limit?: number, scoreThreshold?: number): Promise<NexusResponse> {
-    const { data } = await this.http.post('/api/retrieve/enhanced', {
+    return this.executeTool('nexus_recall_memory', {
       query,
       limit,
       score_threshold: scoreThreshold,
-      includeEpisodic: true,
-      includeDocuments: true,
     });
-    return data;
   }
 
   async storeEpisode(content: string, type?: string, metadata?: any): Promise<NexusResponse> {
-    const { data } = await this.http.post('/api/v2/memory', {
+    return this.executeTool('nexus_store_episode', {
       content,
       episodeType: type,
       metadata,
       forceEpisodicStorage: true,
     });
-    return data;
   }
 
   async recallEpisodes(query: string, limit?: number): Promise<NexusResponse> {
-    const { data } = await this.http.post('/api/retrieve/enhanced', {
+    return this.executeTool('nexus_recall_episodes', {
       query,
       limit,
-      includeEpisodic: true,
-      includeDocuments: false,
     });
-    return data;
   }
 
   // =========================================================================
