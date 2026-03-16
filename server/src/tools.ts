@@ -266,6 +266,31 @@ export const NEXUS_TOOLS: Tool[] = [
       required: ['action'],
     },
   },
+
+  // 10. Health
+  {
+    name: 'nexus_health',
+    description: 'Access health & wellness data from connected wearable devices (Garmin, Fitbit, etc). Retrieve vitals, sleep analysis, activity sessions, nutrition logs, and AI-powered health insights.',
+    inputSchema: {
+      type: 'object' as const,
+      properties: {
+        action: {
+          type: 'string',
+          enum: ['get_vitals', 'get_sleep', 'get_activities', 'get_nutrition', 'consult_doctor', 'get_report', 'get_goals', 'get_correlations'],
+          description: 'get_vitals: current readings | get_sleep: sleep analysis | get_activities: workout sessions | get_nutrition: food logs & macros | consult_doctor: Virtual Doctor AI consultation | get_report: daily health report | get_goals: health goals progress | get_correlations: metric correlation analysis',
+        },
+        days: { type: 'number', description: 'Days of history to retrieve (default: 7)' },
+        date: { type: 'string', description: 'Specific date in YYYY-MM-DD format' },
+        activity_type: { type: 'string', description: 'Filter activities by type (e.g. running, cycling)' },
+        symptoms: { type: 'array', items: { type: 'string' }, description: 'List of symptoms for doctor consultation' },
+        concerns: { type: 'string', description: 'Additional health concerns or context' },
+        urgency: { type: 'string', enum: ['low', 'medium', 'high'], description: 'Urgency level for doctor consultation' },
+        query: { type: 'string', description: 'Natural language query for correlations' },
+        time_range: { type: 'string', description: 'Time range for correlation analysis (e.g. "last 30 days")' },
+      },
+      required: ['action'],
+    },
+  },
 ];
 
 // ---------------------------------------------------------------------------
@@ -542,6 +567,24 @@ export async function handleToolCall(
           return client.selectModel(args.complexity, args.task_type);
         default:
           throw new Error(`Unknown nexus_system action: ${args.action}`);
+      }
+    }
+
+    // -----------------------------------------------------------------------
+    // nexus_health
+    // -----------------------------------------------------------------------
+    case 'nexus_health': {
+      const { action, days, date, activity_type, symptoms, concerns, urgency, query, time_range } = args;
+      switch (action) {
+        case 'get_vitals': return await client.getHealthVitals();
+        case 'get_sleep': return await client.getHealthSleep(days);
+        case 'get_activities': return await client.getHealthActivities(days, activity_type);
+        case 'get_nutrition': return await client.getHealthNutrition(date);
+        case 'consult_doctor': return await client.consultDoctor(symptoms || [], concerns, urgency || 'low');
+        case 'get_report': return await client.getHealthReport(date);
+        case 'get_goals': return await client.getHealthGoals();
+        case 'get_correlations': return await client.getHealthCorrelations(query || '', time_range);
+        default: throw new Error(`Unknown nexus_health action: ${action}`);
       }
     }
 

@@ -467,4 +467,57 @@ export class NexusClient {
     const { data } = await this.http.post('/api/models/select', { complexity, task_type: taskType });
     return data;
   }
+
+  // =========================================================================
+  // Health Plugin Methods
+  // These call the nexus-health service via the API gateway
+  // =========================================================================
+
+  async getHealthVitals(): Promise<any> {
+    const response = await this.http.get('/health/api/v1/vitals/current');
+    return response.data;
+  }
+
+  async getHealthSleep(days = 7): Promise<any> {
+    const response = await this.http.get(`/health/api/v1/sleep/analysis?days=${days}`);
+    return response.data;
+  }
+
+  async getHealthActivities(days = 7, activityType?: string): Promise<any> {
+    const params = new URLSearchParams({ days: String(days) });
+    if (activityType) params.set('activityType', activityType);
+    const response = await this.http.get(`/health/api/v1/activity/summary?${params}`);
+    return response.data;
+  }
+
+  async getHealthNutrition(date?: string): Promise<any> {
+    const query = date ? `?date=${date}` : '';
+    const response = await this.http.get(`/health/api/v1/nutrition/daily-summary${query}`);
+    return response.data;
+  }
+
+  async consultDoctor(symptoms: string[], concerns?: string, urgency = 'low'): Promise<any> {
+    const response = await this.http.post(
+      '/health/api/v1/doctor/consult',
+      { symptoms, concerns, urgency },
+      { timeout: 120000 }
+    );
+    return response.data;
+  }
+
+  async getHealthReport(date?: string): Promise<any> {
+    const query = date ? `?date=${date}` : '';
+    const response = await this.http.get(`/health/api/v1/reports/daily${query}`);
+    return response.data;
+  }
+
+  async getHealthGoals(): Promise<any> {
+    const response = await this.http.get('/health/api/v1/goals');
+    return response.data;
+  }
+
+  async getHealthCorrelations(query: string, timeRange?: string): Promise<any> {
+    const response = await this.http.post('/health/api/v1/insights/correlations', { query, timeRange });
+    return response.data;
+  }
 }
