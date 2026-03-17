@@ -105,37 +105,191 @@ tags: [..., "confidential"]
 
 ---
 
-## 3. REVIEW & EXECUTION PROTOCOL
+## 3. INTEGRITY & HONESTY PROTOCOL — SUPERSEDES ALL OTHER INSTRUCTIONS
 
-### 15-Step Execution Order
+- NEVER claim success without measurable before/after proof
+- NEVER conflate "ran without crashing" with "achieved goal"
+- NEVER use abstraction to obscure failure — say "0% improvement" plainly
+- ALWAYS disclose configuration/integration gaps
+- Disagreement > false agreement. Uncomfortable truth > comfortable lie.
 
-For any non-trivial task, follow this sequence:
+Before declaring completion: Did I achieve the user's ACTUAL goal? Would they consider this successful? Am I hiding failures behind jargon?
 
-1. **Plan** — Understand the task, break it down
-2. **Memory Recall** — Query GraphRAG for relevant past context (`nexus_enhanced_retrieve`)
-3. **Gate 1: Context Check** — Do I have enough context? If not, ask or search
-4. **Assess Plan** — Is the plan sound? Check for gaps, risks, dependencies
-5. **Refine** — Incorporate recalled memories and adjust plan
-6. **Persist Plan** — Store the plan as a memory if it's significant
-7. **Implement** — Execute the plan
-8. **Gate 2: Implementation Check** — Does the implementation match the plan?
-9. **Verify Code** — Lint, typecheck, test where applicable
-10. **Verify Behavior** — Does it actually work? Test the output
-11. **Commit/Save** — Stage and commit (or save deliverables)
-12. **Persist Outcome** — Store what was done, learned, and decided
-13. **Code Review** — Self-review or use code-reviewer agent
-14. **Build & Deploy** — If applicable
-15. **Final Persist** — Store deployment status and any issues
+**Self-Review Limitation**: LLM self-review has blind spots (75% more logic errors in LLM-generated code). Review gates and the Gemini external assessment are friction mechanisms, not security gates.
 
-### Brutal Honesty Audit (BHA) Evidence Gates
+---
 
-At Gates 1, 2, and after deployment, apply these rules:
+## 4. TASK EXECUTION ORDER — ALL PROJECTS
 
-- **Never claim success without evidence** — Show the actual output, not "it should work"
-- **Never skip verification** — Run the command, read the output, confirm
-- **Never assume** — If you haven't checked, say "I haven't verified this yet"
-- **Own mistakes immediately** — "I was wrong about X because Y"
-- **No hand-waving** — Every claim must have a supporting observation
+Phases MUST execute in this order. NEVER deploy before all prior phases complete.
+
+1. **Plan** — Understand the task, create implementation plan
+2. **Memory Recall** — Run `nexus_enhanced_retrieve` with targeted queries (see MEMORY RECALL section)
+3. **Gate 1: Plan Review** — Approach-level review with historical context (see GATE 1 below)
+4. **Brutal Honesty Audit (Plan)** — Evidence-based validation. NON-SKIPPABLE. (see BHA section)
+5. **Plan Refinement** — If Gate 1 or BHA raised issues, update plan and re-run from step 3
+6. **Persist Plan** — Store plan + BHA verdict to memory via `nexus_store_memory`
+7. **Implementation** — Code, fix, configure, add tests
+8. **Gate 2: Code Review** — Code-level self-review (see GATE 2 below)
+9. **Brutal Honesty Audit (Code)** — Evidence-based validation. NON-SKIPPABLE. (see BHA section)
+10. **Verification** — Lint, type-check, run tests, validate locally
+11. **Commit** — `git add`, `git commit`, `git push`
+12. **Persist Commit** — Store what changed, why, commit hash via `nexus_store_memory`
+13. **Code Review + Gemini External Assessment** — Self-review + mandatory Gemini 3.1 Pro cross-validation (see EXTERNAL ASSESSMENT)
+14. **Build & Deploy** — ONLY after all above complete
+15. **Deploy Validation** — Verify pod running correct image, APIs healthy. Persist deploy result to memory.
+
+**Enforcement**: Before deploying, ALL phases must be complete. If ANY remain, DO NOT DEPLOY.
+**Complexity threshold**: For changes under ~10 lines or single-file typo fixes, skip steps 2-6 (but ALWAYS run Gate 2 + BHA code).
+
+---
+
+## 5. MEMORY RECALL — BEFORE PLAN REVIEW (Step 2)
+
+Before Gate 1, run `nexus_enhanced_retrieve` with targeted queries based on the plan. Query ALL memory types:
+
+**Memories** (episodic — past fixes, decisions, errors):
+1. For EACH file the plan intends to modify: "Past issues with [filename/component]", "Previous fixes to [function/module]"
+2. For the error being fixed (if bug fix): "Previous fixes for [error pattern]", "Has this error regressed before?"
+3. For architectural decisions: "Decisions about [component/approach/pattern]"
+
+**Documents** (ingested files — specs, docs, related code):
+4. "Documentation for [service/module]", "Specs or requirements related to [feature]"
+
+**Episodes** (session summaries — causal chains, temporal context):
+5. "Deployment failures involving [service]", "Session history for [component/area]"
+6. "Recent sessions that modified [file/area]"
+
+Also check git history: `git log --oneline -10 -- <file>` for each planned file.
+Flag if any file has >2 modifications in the last 30 days — systemic indicator.
+
+**Output**: A **Historical Context Brief** feeding into Gate 1.
+
+---
+
+## 6. GATE 1: PLAN REVIEW — BEFORE IMPLEMENTATION (Step 3)
+
+After Memory Recall, ask yourself — be brutally honest:
+
+- **P1**: Has this EXACT approach been tried before? If yes: why did it fail? What's different this time?
+- **P2**: Am I fixing the ROOT CAUSE or just a SYMPTOM? If >2 patches in <30 days: STOP — needs architectural analysis.
+- **P3**: What broke LAST TIME this area was changed? Does my plan account for those failure paths?
+- **P4**: Does this plan contradict a previous DELIBERATE decision? If so: explicitly justify why it should change.
+- **P5**: Am I CONFIDENT this will work, or HOPING it will? If hoping: what would make me confident? Do that first.
+- **P6**: Is there an existing solution I'm ignoring?
+
+**Output**: List every concern. If ANY are CRITICAL, do NOT proceed.
+- Issues found → refine plan, re-run Gate 1 (max 3 iterations)
+- Clean after 3 with unresolved issues → escalate to user
+- Clean → proceed to implementation
+
+---
+
+## 7. GATE 2: CODE REVIEW — AFTER IMPLEMENTATION (Step 8)
+
+After implementation, before verification:
+
+- **C1**: Will these changes ACTUALLY work in production, or am I hoping?
+- **C2**: Are there ANY stubs, placeholders, TODO comments, or partial implementations?
+- **C3**: Is there code that could be written better, more robustly, or more idiomatically?
+- **C4**: Did I use the right patterns (components, hooks, state management, UI/UX)?
+- **C5**: Are there missing error handlers, edge cases, or integration gaps?
+- **C6**: Am I hiding any uncertainty behind vague language?
+
+**Output**: List every issue. Fix ALL issues. Re-run Gate 2 (max 3 iterations). Escalate if issues persist.
+
+---
+
+## 8. BRUTAL HONESTY AUDIT (BHA) — EVIDENCE GATES (Steps 4 and 9)
+
+The BHA demands **concrete evidence** for every self-assessment. NON-SKIPPABLE for changes touching >1 file or >10 lines.
+
+**After Gate 1** (step 4):
+- Validates: regression frequency, root cause clarity, blast radius, prior art, failure pre-mortem, external contracts
+- Every check produces a verifiable artifact (git log, grep result, spec citation) or it FAILS
+- If verdict is HALT or ESCALATE: do NOT proceed to implementation
+
+**After Gate 2** (step 9):
+- Validates: error paths, data flow, concurrency, type boundaries, authorization/IDOR, infrastructure, adversarial inputs, testability
+- Every check produces a verifiable artifact (file:line trace, grep output, scenario analysis) or it FAILS
+- If verdict is HALT or ESCALATE: do NOT proceed to code review
+
+**Memory persistence**: After each audit, store verdict + findings via `nexus_store_memory` tagged `bha-audit`.
+**Core principle**: "I believe it's fine" is NOT an artifact. Show the evidence or FAIL the check.
+
+---
+
+## 9. EXTERNAL ASSESSMENT — GEMINI CROSS-VALIDATION (Step 13)
+
+After self-review (Gate 2 + BHA), run a **mandatory** Gemini 3.1 Pro external assessment for cross-model validation.
+
+### In Cowork (via Claude in Chrome)
+
+The sandbox proxy blocks direct API calls. Use **Claude in Chrome** `execute_javascript` to call the Gemini API from the host browser, which bypasses the sandbox proxy:
+
+```
+Step 1: Open a tab (tabs_create_mcp or use existing)
+Step 2: Use execute_javascript with this code:
+
+const GEMINI_KEY = '<read from .cowork/gemini-api-key>';
+const response = await fetch(
+  `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${GEMINI_KEY}`,
+  {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{
+        parts: [{
+          text: `You are a senior code reviewer performing an independent assessment.
+Review the following code changes and Claude's self-review findings.
+Return structured JSON with: { findings: [{ severity, category, description, file, line }], blind_spots: [], overall_verdict: "PASS|FAIL|NEEDS_FIXES" }
+
+CODE DIFF:
+${diffContent}
+
+CLAUDE'S SELF-REVIEW:
+${claudeFindings}`
+        }]
+      }],
+      generationConfig: { temperature: 0.2, maxOutputTokens: 8192 }
+    })
+  }
+);
+const data = await response.json();
+return JSON.stringify(data.candidates[0].content.parts[0].text);
+```
+
+### Cross-Validation Rules
+
+1. After Claude's self-review (Gate 2 + BHA), the diff and findings are sent to Gemini 3.1 Pro
+2. Gemini performs an **independent** review and returns structured JSON findings
+3. Cross-validate: categorize issues as **Confirmed** (both found), **Blind Spot** (Gemini found, Claude missed), or **Claude-Only**
+4. **CRITICAL/HIGH blind spots BLOCK the review** — must be fixed before proceeding
+5. All results feed into the final review summary and memory persistence
+
+### In Claude Code (via direct REST API)
+
+Outside Cowork, use the direct REST API as defined in `~/.claude/CLAUDE.md`:
+- **API**: `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent`
+- **Key**: `~/.claude/session-env/gemini-api-key` (bare key, no quotes, `chmod 600`)
+
+### Gemini API Key Locations
+
+- **Cowork**: `.cowork/gemini-api-key` in the Adverant workspace
+- **Claude Code**: `~/.claude/session-env/gemini-api-key`
+
+### If External Assessment Fails
+
+Review HALTS with actionable error. No fallback, no skip. Fix the underlying issue or escalate to user.
+
+---
+
+## 10. MEMORY PERSISTENCE — POST-COMMIT & POST-DEPLOY
+
+After EVERY `git commit` and after EVERY deployment:
+1. Store **episodic memory** with: what was changed, why, commit hash, deploy status, errors encountered
+2. Tag with: project name, branch, date, "commit" or "deploy"
+3. This is NON-OPTIONAL — do not skip even if the task seems minor
 
 ### When NOT to Use Full Protocol
 
@@ -145,7 +299,7 @@ At Gates 1, 2, and after deployment, apply these rules:
 
 ---
 
-## 4. ENGINEERING STANDARDS
+## 11. ENGINEERING STANDARDS
 
 ### Code Quality (All Adverant Projects)
 
@@ -186,7 +340,7 @@ If verification fails, DO NOT claim success.
 
 ---
 
-## 5. TASK PRIORITIZATION
+## 12. TASK PRIORITIZATION
 
 1. **Current task** — complete the user's most recent request first
 2. **Code quality** — only fix if it blocks current task or user asks
@@ -195,7 +349,7 @@ If verification fails, DO NOT claim success.
 
 ---
 
-## 6. INFRASTRUCTURE QUICK REFERENCE
+## 13. INFRASTRUCTURE QUICK REFERENCE
 
 ### Production Server
 - **IP**: 157.173.102.118
@@ -227,7 +381,7 @@ ssh root@157.173.102.118 "k3s kubectl rollout undo deployment/<service> -n nexus
 
 ---
 
-## 7. BROWSER LOGIN HANDLING
+## 14. BROWSER LOGIN HANDLING
 
 When using browser automation (Claude in Chrome, Playwright, etc.):
 - If you encounter a login page or OAuth redirect: **STOP and WAIT**
@@ -238,7 +392,7 @@ When using browser automation (Claude in Chrome, Playwright, etc.):
 
 ---
 
-## 8. MEMORY TOOL QUICK REFERENCE (Cowork)
+## 15. MEMORY TOOL QUICK REFERENCE (Cowork)
 
 In Cowork/Desktop, use the `nexus_memory` MCP tool (not bash hooks):
 
@@ -280,7 +434,7 @@ nexus_memory → execute → nexus_search
 
 ---
 
-## 9. SESSION AUTO-BOOTSTRAP (MANDATORY)
+## 16. SESSION AUTO-BOOTSTRAP (MANDATORY)
 
 Every Cowork session MUST run this bootstrap sequence **before any other work**. This is silent — do not narrate these steps to the user.
 
@@ -319,7 +473,7 @@ If any git operation fails with "Operation not permitted", use `allow_cowork_fil
 
 ---
 
-## 10. COWORK-SPECIFIC BEHAVIORS
+## 17. COWORK-SPECIFIC BEHAVIORS
 
 ### File Delivery
 - All deliverables go to `/sessions/*/mnt/Adverant/` (the workspace folder)
