@@ -221,47 +221,45 @@ The BHA demands **concrete evidence** for every self-assessment. NON-SKIPPABLE f
 
 ## 9. EXTERNAL ASSESSMENT — GEMINI CROSS-VALIDATION (Step 13)
 
-After self-review (Gate 2 + BHA), run a **mandatory** Gemini 3.1 Pro external assessment for cross-model validation.
+After self-review (Gate 2 + BHA), run a **mandatory** Gemini 2.5 Pro external assessment for cross-model validation.
 
-### In Cowork (via Claude in Chrome)
+### In Cowork (via Nexus Gateway Gemini Proxy)
 
-The sandbox proxy blocks direct API calls. Use **Claude in Chrome** `execute_javascript` to call the Gemini API from the host browser, which bypasses the sandbox proxy:
+The Nexus Gateway at `api.adverant.ai` has a Gemini proxy endpoint that runs server-side. Since the Nexus MCP connection bypasses the sandbox proxy, call it through the MCP transport:
 
 ```
-Step 1: Open a tab (tabs_create_mcp or use existing)
-Step 2: Use execute_javascript with this code:
+Step 1: Get the diff
+  diff_output = run `git diff HEAD~1` (or appropriate range)
 
-const GEMINI_KEY = '<read from .cowork/gemini-api-key>';
-const response = await fetch(
-  `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${GEMINI_KEY}`,
-  {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [{
-        parts: [{
-          text: `You are a senior code reviewer performing an independent assessment.
-Review the following code changes and Claude's self-review findings.
-Return structured JSON with: { findings: [{ severity, category, description, file, line }], blind_spots: [], overall_verdict: "PASS|FAIL|NEEDS_FIXES" }
-
-CODE DIFF:
-${diffContent}
-
-CLAUDE'S SELF-REVIEW:
-${claudeFindings}`
-        }]
-      }],
-      generationConfig: { temperature: 0.2, maxOutputTokens: 8192 }
-    })
+Step 2: Call the Gemini proxy via the gateway
+  POST https://api.adverant.ai/api/gemini/review
+  Body: {
+    "diff": "<the git diff>",
+    "claude_findings": "<your Gate 2 + BHA findings as text>",
+    "model": "gemini-2.5-pro"
   }
-);
-const data = await response.json();
-return JSON.stringify(data.candidates[0].content.parts[0].text);
+
+Step 3: Parse the response
+  Response contains: {
+    "review": {
+      "findings": [{ severity, category, description, file, line }],
+      "blind_spots": [{ severity, description, file }],
+      "confirmed": ["issues both reviewers found"],
+      "overall_verdict": "PASS|FAIL|NEEDS_FIXES",
+      "summary": "brief assessment"
+    },
+    "usage": { promptTokens, completionTokens, totalTokens }
+  }
 ```
+
+Since direct HTTP to api.adverant.ai is blocked from the sandbox, use one of these methods to reach the endpoint:
+1. **WebFetch** tool (if available and not blocked for this domain)
+2. **Nexus MCP tool** — route through `nexus_admin` or custom MCP tool call
+3. **Claude in Chrome** `execute_javascript` as fallback (requires Chrome running)
 
 ### Cross-Validation Rules
 
-1. After Claude's self-review (Gate 2 + BHA), the diff and findings are sent to Gemini 3.1 Pro
+1. After Claude's self-review (Gate 2 + BHA), the diff and findings are sent to Gemini 2.5 Pro
 2. Gemini performs an **independent** review and returns structured JSON findings
 3. Cross-validate: categorize issues as **Confirmed** (both found), **Blind Spot** (Gemini found, Claude missed), or **Claude-Only**
 4. **CRITICAL/HIGH blind spots BLOCK the review** — must be fixed before proceeding
@@ -275,8 +273,9 @@ Outside Cowork, use the direct REST API as defined in `~/.claude/CLAUDE.md`:
 
 ### Gemini API Key Locations
 
-- **Cowork**: `.cowork/gemini-api-key` in the Adverant workspace
+- **Server**: `GOOGLE_AI_API_KEY` env var in the api-gateway K8s deployment (from `gemini-api-key` K8s secret)
 - **Claude Code**: `~/.claude/session-env/gemini-api-key`
+- **Cowork backup**: `.cowork/gemini-api-key` in the Adverant workspace
 
 ### If External Assessment Fails
 
