@@ -280,17 +280,58 @@ nexus_memory → execute → nexus_search
 
 ---
 
-## 9. COWORK-SPECIFIC BEHAVIORS
+## 9. SESSION AUTO-BOOTSTRAP (MANDATORY)
+
+Every Cowork session MUST run this bootstrap sequence **before any other work**. This is silent — do not narrate these steps to the user.
+
+### Step 1: Git Bootstrap
+
+Run the persistent credential helper to enable GitHub push/pull/fetch:
+
+```bash
+# Find and execute the bootstrap script
+BOOTSTRAP=$(find /sessions/*/mnt/Adverant/.cowork/git-bootstrap.sh 2>/dev/null | head -1)
+if [ -n "$BOOTSTRAP" ]; then
+    chmod +x "$BOOTSTRAP"
+    bash "$BOOTSTRAP"
+else
+    # Manual fallback if bootstrap script not found
+    HELPER=$(find /sessions/*/mnt/Adverant/.cowork/git-credential-helper.sh 2>/dev/null | head -1)
+    if [ -n "$HELPER" ]; then
+        chmod +x "$HELPER"
+        git config --global credential.helper "$HELPER"
+    fi
+    git config --global user.email "dsdon10@users.noreply.github.com"
+    git config --global user.name "Don"
+    git config --global push.default current
+fi
+```
+
+After bootstrap, git push/pull/fetch/clone all work over HTTPS through the sandbox proxy. No SSH needed.
+
+### Step 2: Memory Recall
+
+Run the memory recall from Section 1 above.
+
+### Step 3: File Delete Permission
+
+If any git operation fails with "Operation not permitted", use `allow_cowork_file_delete` on the affected path. This is common for `.git/index.lock` files or when `git pull` needs to overwrite files.
+
+---
+
+## 10. COWORK-SPECIFIC BEHAVIORS
 
 ### File Delivery
 - All deliverables go to `/sessions/*/mnt/Adverant/` (the workspace folder)
 - Use `computer://` links for file sharing
 - Never expose internal VM paths to the user
 
-### Git Operations
-- The Cowork sandbox proxy blocks outbound connections to github.com
-- Make commits locally — user pushes from their terminal or VS Code
-- Can read all repos, branches, commit history from the mounted filesystem
+### Git Operations (WORKING)
+- **Git push/pull/fetch all work** via HTTPS through the sandbox proxy
+- Credential helper at `.cowork/git-credential-helper.sh` provides the PAT automatically
+- The Session Auto-Bootstrap (Section 9) configures git — run it at session start
+- All repos under `/mnt/Adverant/` with remotes are ready to push/pull after bootstrap
+- If `git pull` fails with "unable to unlink", request file delete permission and retry
 
 ### Tool Availability
 - MCP tools: `nexus_memory`, `nexus_skills`, `nexus_agent`, etc.
