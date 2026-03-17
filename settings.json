@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "mcp__nexus__*"
+      "mcp__nexus__*",
+      "mcp__github__*"
     ]
   }
 }
